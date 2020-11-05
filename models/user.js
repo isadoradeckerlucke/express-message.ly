@@ -5,7 +5,6 @@ const db = require("../db");
 const ExpressError = require("../expressError");
 const { BCRYPT_WORK_FACTOR } = require("../config");
 
-
 /** User of the site. */
 
 class User {
