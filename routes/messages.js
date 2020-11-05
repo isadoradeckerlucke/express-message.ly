@@ -1,3 +1,10 @@
+const Router = require('express').Router;
+const router = new Router();
+
+const Message = require('../models/message');
+const {ensureLoggedIn} = require('../middleware/auth');
+const ExpressError = require('../expressError')
+
 /** GET /:id - get detail of message.
  *
  * => {message: {id,
@@ -11,6 +18,22 @@
  *
  **/
 
+ router.get('/:id', ensureLoggedIn, async function(req, res, next){
+    try {
+        let username = req.user.username;
+        let msg = await Message.get(req.params.id);
+
+        // make sure that the currently logged in user is either the to or from user
+        if (msg.to_user.username !== username && msg.from_user.username !== username) {
+            throw new ExpressError('you do not have permission to read this message', 401);
+        }
+        return res.json({message: msg})
+
+    }catch(err) {
+        return next(err)
+    }
+ })
+
 
 /** POST / - post message.
  *
@@ -18,6 +41,19 @@
  *   {message: {id, from_username, to_username, body, sent_at}}
  *
  **/
+
+router.post('/', ensureLoggedIn, async function(req, res, next){
+    try {
+        let msg = await Message.create({
+            from_username: req.user.username,
+            to_username: req.body.to_username,
+            body: req.body.body
+        })
+        return res.json({message:msg})
+    } catch(err){
+        return next(err)
+    }
+})
 
 
 /** POST/:id/read - mark message as read:
@@ -28,3 +64,21 @@
  *
  **/
 
+router.post('/', ensureLoggedIn, async function(req, res, next){
+    try {
+        let username = req.user.username;
+        let msg = await Message.get(req.params.id);
+
+        if (msg.to_user.username !== username) {
+            throw new ExpressError('you can only mark messages that were written to you as read', 401);
+        }
+        let message = await Message.markRead(req.params.id);
+
+        return res.json({message})
+        
+    } catch(err){
+        return next(err)
+    }
+})
+
+module.exports = router;
