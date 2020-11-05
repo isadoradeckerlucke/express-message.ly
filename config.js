@@ -2,6 +2,8 @@
 
 // read .env files and make environmental variables
 
+// config files job is to be a centralized place for constants needed in different places in the application. other places should require() these values. 
+
 require("dotenv").config();
 
 const DB_URI = (process.env.NODE_ENV === "test")
